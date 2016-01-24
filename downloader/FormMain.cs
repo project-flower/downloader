@@ -219,6 +219,11 @@ namespace downloader
             }
         }
 
+        private void listViewUrls_DoubleClick(object sender, EventArgs e)
+        {
+            explore();
+        }
+
         private void listViewUrls_RetrieveVirtualItem(object sender, RetrieveVirtualItemEventArgs e)
         {
             e.Item = listViewItems[e.ItemIndex];

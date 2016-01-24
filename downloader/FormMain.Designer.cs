@@ -130,6 +130,7 @@
             this.listViewUrls.View = System.Windows.Forms.View.Details;
             this.listViewUrls.VirtualMode = true;
             this.listViewUrls.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.listViewUrls_RetrieveVirtualItem);
+            this.listViewUrls.DoubleClick += new System.EventHandler(this.listViewUrls_DoubleClick);
             // 
             // columnHeaderName
             // 
