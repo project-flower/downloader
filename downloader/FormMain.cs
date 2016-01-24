@@ -153,6 +153,7 @@ namespace downloader
                 client.DownloadFileCompleted += webClient_DownloadFileCompleted;
                 client.DownloadProgressChanged += webClient_DownloadProgressChanged;
                 var file = new FileInfo(saveFileDialog.FileName);
+                saveFileDialog.InitialDirectory = file.DirectoryName;
                 client.Index = addItem(file, uri.AbsoluteUri);
                 webClients.Add(client);
                 client.DownloadFileAsync(uri, saveFileDialog.FileName);
