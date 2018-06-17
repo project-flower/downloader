@@ -51,9 +51,9 @@
             this.labelUrl.AutoSize = true;
             this.labelUrl.Location = new System.Drawing.Point(12, 17);
             this.labelUrl.Name = "labelUrl";
-            this.labelUrl.Size = new System.Drawing.Size(45, 12);
+            this.labelUrl.Size = new System.Drawing.Size(29, 12);
             this.labelUrl.TabIndex = 0;
-            this.labelUrl.Text = "URL(&U):";
+            this.labelUrl.Text = "&URL:";
             // 
             // comboBoxUrl
             // 
@@ -62,9 +62,9 @@
             this.comboBoxUrl.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
             this.comboBoxUrl.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.AllUrl;
             this.comboBoxUrl.FormattingEnabled = true;
-            this.comboBoxUrl.Location = new System.Drawing.Point(63, 14);
+            this.comboBoxUrl.Location = new System.Drawing.Point(47, 14);
             this.comboBoxUrl.Name = "comboBoxUrl";
-            this.comboBoxUrl.Size = new System.Drawing.Size(444, 20);
+            this.comboBoxUrl.Size = new System.Drawing.Size(460, 20);
             this.comboBoxUrl.TabIndex = 1;
             // 
             // buttonAdd
@@ -74,7 +74,7 @@
             this.buttonAdd.Name = "buttonAdd";
             this.buttonAdd.Size = new System.Drawing.Size(75, 23);
             this.buttonAdd.TabIndex = 2;
-            this.buttonAdd.Text = "Add(&A)";
+            this.buttonAdd.Text = "&Add";
             this.buttonAdd.UseVisualStyleBackColor = true;
             this.buttonAdd.Click += new System.EventHandler(this.buttonAdd_Click);
             // 
@@ -85,7 +85,7 @@
             this.buttonRemove.Name = "buttonRemove";
             this.buttonRemove.Size = new System.Drawing.Size(75, 23);
             this.buttonRemove.TabIndex = 4;
-            this.buttonRemove.Text = "Remove(&R)";
+            this.buttonRemove.Text = "&Remove";
             this.buttonRemove.UseVisualStyleBackColor = true;
             this.buttonRemove.Click += new System.EventHandler(this.buttonRemove_Click);
             // 
@@ -96,7 +96,7 @@
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(75, 23);
             this.buttonCancel.TabIndex = 5;
-            this.buttonCancel.Text = "Cancel(&C)";
+            this.buttonCancel.Text = "&Cancel";
             this.buttonCancel.UseVisualStyleBackColor = true;
             this.buttonCancel.Click += new System.EventHandler(this.buttonCancel_Click);
             // 
@@ -107,7 +107,7 @@
             this.buttonShow.Name = "buttonShow";
             this.buttonShow.Size = new System.Drawing.Size(75, 23);
             this.buttonShow.TabIndex = 6;
-            this.buttonShow.Text = "Show(&S)";
+            this.buttonShow.Text = "&Show";
             this.buttonShow.UseVisualStyleBackColor = true;
             this.buttonShow.Click += new System.EventHandler(this.buttonShow_Click);
             // 
