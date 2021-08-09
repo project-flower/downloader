@@ -2,8 +2,10 @@
 
 namespace downloader
 {
-    class DoubleBufferedListView : ListView
+    public class DoubleBufferedListView : ListView
     {
+        #region Protected Methods
+
         protected override bool DoubleBuffered
         {
             get
@@ -14,5 +16,7 @@ namespace downloader
             {
             }
         }
+
+        #endregion
     }
 }

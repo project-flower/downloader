@@ -10,6 +10,8 @@ namespace downloader
 {
     public partial class FormMain : Form
     {
+        #region Private Classes
+
         private class WebClientEx : WebClient
         {
             public int Index
@@ -19,10 +21,29 @@ namespace downloader
             }
         }
 
-        private List<ListViewItem> listViewItems = new List<ListViewItem>();
-        private List<WebClientEx> webClients = new List<WebClientEx>();
+        #endregion
 
-        private int addItem(FileInfo file, string address)
+        #region Public Methods
+
+        public FormMain()
+        {
+            InitializeComponent();
+            FormBorderStyle = FormBorderStyle.Sizable;
+            saveFileDialog.InitialDirectory = Application.StartupPath;
+        }
+
+        #endregion
+
+        #region Private Fields
+
+        private readonly List<ListViewItem> listViewItems = new List<ListViewItem>();
+        private readonly List<WebClientEx> webClients = new List<WebClientEx>();
+
+        #endregion
+
+        #region Private Methods
+
+        private int AddItem(FileInfo file, string address)
         {
             var item = new ListViewItem(new string[]
             {
@@ -39,7 +60,7 @@ namespace downloader
             return (listViewUrls.VirtualListSize - 1);
         }
 
-        private void disposeWebClient(WebClientEx webClient)
+        private void DisposeWebClient(WebClientEx webClient)
         {
             webClient.DownloadDataCompleted -= webClient_DownloadFileCompleted;
             webClient.DownloadProgressChanged -= webClient_DownloadProgressChanged;
@@ -47,7 +68,7 @@ namespace downloader
             webClient = null;
         }
 
-        private void explore()
+        private void Explore()
         {
             ListView.SelectedIndexCollection indices = listViewUrls.SelectedIndices;
 
@@ -72,17 +93,55 @@ namespace downloader
             }
         }
 
-        private ListViewItem.ListViewSubItem getSubItem(ListViewItem listViewItem, ColumnHeader header)
+        private ListViewItem.ListViewSubItem GetSubItem(ListViewItem listViewItem, ColumnHeader header)
         {
             return listViewItem.SubItems[header.DisplayIndex];
         }
 
-        public FormMain()
+        private void webClient_DownloadFileCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
         {
-            InitializeComponent();
-            FormBorderStyle = FormBorderStyle.Sizable;
-            saveFileDialog.InitialDirectory = Application.StartupPath;
+            var client = sender as WebClientEx;
+            DisposeWebClient(client);
+            ListViewItem item = listViewItems[client.Index];
+            listViewUrls.BeginUpdate();
+            ListViewItem.ListViewSubItem subItem = GetSubItem(item, columnHeaderProgress);
+            Color foreColor;
+            string description;
+
+            if (e.Cancelled)
+            {
+                foreColor = Color.Gray;
+                description = "Cancelled";
+            }
+            else if (e.Error != null)
+            {
+                foreColor = Color.Red;
+                description = e.Error.Message;
+            }
+            else
+            {
+                foreColor = Color.Black;
+                description = "Completed";
+            }
+
+            subItem.ForeColor = foreColor;
+            subItem.Text = description;
+            listViewUrls.EndUpdate();
         }
+
+        private void webClient_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
+        {
+            var client = sender as WebClientEx;
+            ListViewItem item = listViewItems[client.Index];
+            listViewUrls.BeginUpdate();
+            ListViewItem.ListViewSubItem subItem = GetSubItem(item, columnHeaderProgress);
+            subItem.Text = string.Format("{0}%[{1}/{2}]bytes", e.ProgressPercentage, e.BytesReceived, e.TotalBytesToReceive);
+            listViewUrls.EndUpdate();
+        }
+
+        #endregion
+
+        // Designer's Methods
 
         private void buttonAdd_Click(object sender, System.EventArgs e)
         {
@@ -113,7 +172,7 @@ namespace downloader
                 client.DownloadProgressChanged += webClient_DownloadProgressChanged;
                 var file = new FileInfo(saveFileDialog.FileName);
                 saveFileDialog.InitialDirectory = file.DirectoryName;
-                client.Index = addItem(file, uri.AbsoluteUri);
+                client.Index = AddItem(file, uri.AbsoluteUri);
                 webClients.Add(client);
                 client.DownloadFileAsync(uri, saveFileDialog.FileName);
             }
@@ -168,20 +227,20 @@ namespace downloader
 
         private void buttonShow_Click(object sender, System.EventArgs e)
         {
-            explore();
+            Explore();
         }
 
         private void formClosing(object sender, FormClosingEventArgs e)
         {
             foreach (WebClientEx client in webClients)
             {
-                disposeWebClient(client);
+                DisposeWebClient(client);
             }
         }
 
         private void listViewUrls_DoubleClick(object sender, EventArgs e)
         {
-            explore();
+            Explore();
         }
 
         private void listViewUrls_RetrieveVirtualItem(object sender, RetrieveVirtualItemEventArgs e)
@@ -191,7 +250,7 @@ namespace downloader
 
         private void toolStripMenuItemShowFile_Click(object sender, EventArgs e)
         {
-            explore();
+            Explore();
         }
 
         private void toolStripMenuItemCopyUrl_Click(object sender, EventArgs e)
@@ -205,52 +264,11 @@ namespace downloader
 
             try
             {
-                Clipboard.SetText(getSubItem(listViewItems[indices[0]], columnHeaderUrl).Text);
+                Clipboard.SetText(GetSubItem(listViewItems[indices[0]], columnHeaderUrl).Text);
             }
             catch
             {
             }
-        }
-
-        void webClient_DownloadFileCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
-        {
-            var client = sender as WebClientEx;
-            disposeWebClient(client);
-            ListViewItem item = listViewItems[client.Index];
-            listViewUrls.BeginUpdate();
-            ListViewItem.ListViewSubItem subItem = getSubItem(item, columnHeaderProgress);
-            Color foreColor;
-            string description;
-
-            if (e.Cancelled)
-            {
-                foreColor = Color.Gray;
-                description = "Cancelled";
-            }
-            else if (e.Error != null)
-            {
-                foreColor = Color.Red;
-                description = e.Error.Message;
-            }
-            else
-            {
-                foreColor = Color.Black;
-                description = "Completed";
-            }
-
-            subItem.ForeColor = foreColor;
-            subItem.Text = description;
-            listViewUrls.EndUpdate();
-        }
-
-        void webClient_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
-        {
-            var client = sender as WebClientEx;
-            ListViewItem item = listViewItems[client.Index];
-            listViewUrls.BeginUpdate();
-            ListViewItem.ListViewSubItem subItem = getSubItem(item, columnHeaderProgress);
-            subItem.Text = string.Format("{0}%[{1}/{2}]bytes", e.ProgressPercentage, e.BytesReceived, e.TotalBytesToReceive);
-            listViewUrls.EndUpdate();
         }
     }
 }
