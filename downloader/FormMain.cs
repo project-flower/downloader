@@ -67,9 +67,7 @@ namespace downloader
 
         private void DisposeWebClient(ListViewItem listViewItem)
         {
-            var webClient = listViewItem.Tag as WebClientEx;
-
-            if (webClient == null)
+            if (!(listViewItem.Tag is WebClientEx webClient))
             {
                 return;
             }
@@ -163,7 +161,7 @@ namespace downloader
 
         // Designer's Methods
 
-        private void buttonAdd_Click(object sender, System.EventArgs e)
+        private void buttonAdd_Click(object sender, EventArgs e)
         {
             try
             {
@@ -270,9 +268,7 @@ namespace downloader
 
             foreach (ListViewItem item in selectedItems)
             {
-                var webClient = item.Tag as WebClientEx;
-
-                if (webClient == null)
+                if (!(item.Tag is WebClientEx webClient))
                 {
                     continue;
                 }
@@ -300,9 +296,7 @@ namespace downloader
 
             foreach (ListViewItem item in selectedItems)
             {
-                var webClient = item.Tag as WebClientEx;
-
-                if (webClient == null)
+                if (!(item.Tag is WebClientEx webClient))
                 {
                     continue;
                 }
@@ -338,7 +332,7 @@ namespace downloader
             listViewUrls.EndUpdate();
         }
 
-        private void buttonShow_Click(object sender, System.EventArgs e)
+        private void buttonShow_Click(object sender, EventArgs e)
         {
             Explore();
         }
