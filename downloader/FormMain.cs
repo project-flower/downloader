@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -10,19 +11,6 @@ namespace downloader
 {
     public partial class FormMain : Form
     {
-        #region Private Classes
-
-        private class WebClientEx : WebClient
-        {
-            public int Index
-            {
-                get;
-                set;
-            }
-        }
-
-        #endregion
-
         #region Public Methods
 
         public FormMain()
@@ -36,36 +24,58 @@ namespace downloader
 
         #region Private Fields
 
-        private readonly List<ListViewItem> listViewItems = new List<ListViewItem>();
-        private readonly List<WebClientEx> webClients = new List<WebClientEx>();
+        private readonly FormAddBatch formAddBatch = new FormAddBatch();
 
         #endregion
 
         #region Private Methods
 
-        private int AddItem(FileInfo file, string address)
+        private int AddItem(string fileName, string address)
         {
             var item = new ListViewItem(new string[]
             {
-                file.Name, address, string.Empty
-            })
-            {
-                Tag = file.FullName
-            };
+                Path.GetFileName(fileName), address, string.Empty
+            });
 
+            item.Tag = new WebClientEx(fileName, item, webClient_DownloadFileCompleted, webClient_DownloadProgressChanged);
             item.UseItemStyleForSubItems = false;
             item.SubItems[columnHeaderProgress.DisplayIndex].ForeColor = Color.Blue;
-            listViewItems.Add(item);
-            ++(listViewUrls.VirtualListSize);
-            return (listViewUrls.VirtualListSize - 1);
+            listViewUrls.Items.Add(item);
+            return listViewUrls.Items.Count;
         }
 
-        private void DisposeWebClient(WebClientEx webClient)
+        private void BeginDownload()
         {
-            webClient.DownloadDataCompleted -= webClient_DownloadFileCompleted;
-            webClient.DownloadProgressChanged -= webClient_DownloadProgressChanged;
+            foreach (ListViewItem item in listViewUrls.Items)
+            {
+                var webClient = item.Tag as WebClientEx;
+
+                if (webClient.Completed)
+                {
+                    continue;
+                }
+
+                if (webClient.IsBusy)
+                {
+                    return;
+                }
+
+                webClient.DownloadFileAsync(new Uri(item.SubItems[columnHeaderUrl.Index].Text), webClient.SaveFileName);
+                break;
+            }
+        }
+
+        private void DisposeWebClient(ListViewItem listViewItem)
+        {
+            var webClient = listViewItem.Tag as WebClientEx;
+
+            if (webClient == null)
+            {
+                return;
+            }
+
             webClient.Dispose();
-            webClient = null;
+            listViewItem.Tag = null;
         }
 
         private void Explore()
@@ -79,14 +89,14 @@ namespace downloader
 
             try
             {
-                var file = new FileInfo(listViewItems[indices[0]].Tag.ToString());
+                string saveFileName = (listViewUrls.Items[indices[0]].Tag as WebClientEx).SaveFileName;
 
-                if (!(file.Exists))
+                if (!(File.Exists(saveFileName)))
                 {
                     return;
                 }
 
-                Process.Start("explorer.exe", string.Format("/select,\"{0}\"", file.FullName));
+                Process.Start("explorer.exe", string.Format("/select,\"{0}\"", saveFileName));
             }
             catch
             {
@@ -98,11 +108,20 @@ namespace downloader
             return listViewItem.SubItems[header.DisplayIndex];
         }
 
-        private void webClient_DownloadFileCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
+        private void ShowErrorMessage(string message)
         {
-            var client = sender as WebClientEx;
-            DisposeWebClient(client);
-            ListViewItem item = listViewItems[client.Index];
+            ShowMessage(message, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        private DialogResult ShowMessage(string text, MessageBoxButtons buttons, MessageBoxIcon icon)
+        {
+            return MessageBox.Show(this, text, Text, buttons, icon);
+        }
+
+        private void webClient_DownloadFileCompleted(object sender, AsyncCompletedEventArgs e)
+        {
+            var webClient = sender as WebClientEx;
+            ListViewItem item = webClient.ListViewItem;
             listViewUrls.BeginUpdate();
             ListViewItem.ListViewSubItem subItem = GetSubItem(item, columnHeaderProgress);
             Color foreColor;
@@ -127,12 +146,13 @@ namespace downloader
             subItem.ForeColor = foreColor;
             subItem.Text = description;
             listViewUrls.EndUpdate();
+            BeginDownload();
         }
 
         private void webClient_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
         {
-            var client = sender as WebClientEx;
-            ListViewItem item = listViewItems[client.Index];
+            var webClient = sender as WebClientEx;
+            ListViewItem item = webClient.ListViewItem;
             listViewUrls.BeginUpdate();
             ListViewItem.ListViewSubItem subItem = GetSubItem(item, columnHeaderProgress);
             subItem.Text = string.Format("{0}%[{1}/{2}]bytes", e.ProgressPercentage, e.BytesReceived, e.TotalBytesToReceive);
@@ -166,15 +186,6 @@ namespace downloader
                 {
                     return;
                 }
-
-                var client = new WebClientEx();
-                client.DownloadFileCompleted += webClient_DownloadFileCompleted;
-                client.DownloadProgressChanged += webClient_DownloadProgressChanged;
-                var file = new FileInfo(saveFileDialog.FileName);
-                saveFileDialog.InitialDirectory = file.DirectoryName;
-                client.Index = AddItem(file, uri.AbsoluteUri);
-                webClients.Add(client);
-                client.DownloadFileAsync(uri, saveFileDialog.FileName);
             }
             catch (Exception exception)
             {
@@ -182,44 +193,146 @@ namespace downloader
             }
         }
 
-        private void buttonCancel_Click(object sender, System.EventArgs e)
+        private void buttonBatch_Click(object sender, EventArgs e)
         {
-            ListView.SelectedIndexCollection selectedIndices = listViewUrls.SelectedIndices;
+            string[] items;
 
-            foreach (int index in selectedIndices)
+            do
             {
-                WebClientEx client = webClients[index];
+                if (formAddBatch.ShowDialog() != DialogResult.OK)
+                {
+                    return;
+                }
 
-                if (client == null)
+                try
+                {
+                    items = formAddBatch.GetValues();
+                    break;
+                }
+                catch (Exception exception)
+                {
+                    ShowErrorMessage(exception.Message);
+                }
+            }
+            while (true);
+
+            string message = items[0];
+            string newLine = Environment.NewLine;
+
+            if (items.Length > 1)
+            {
+                message += $"{newLine}...{newLine}{items[items.Length - 1]}";
+            }
+
+            if (ShowMessage($"以下のファイルを追加します。よろしいですか？{newLine}{newLine}{message}", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+            {
+                return;
+            }
+
+            if (folderBrowserDialog.ShowDialog() != DialogResult.OK)
+            {
+                return;
+            }
+
+            listViewUrls.BeginUpdate();
+
+            try
+            {
+                foreach (string item in items)
+                {
+                    Uri uri;
+
+                    try
+                    {
+                        uri = new Uri(item);
+                    }
+                    catch (Exception exception)
+                    {
+                        ShowErrorMessage(exception.Message);
+                        return;
+                    }
+
+                    string[] segments = uri.Segments;
+                    AddItem(Path.Combine(folderBrowserDialog.SelectedPath, segments[segments.Length - 1]), item);
+                }
+            }
+            finally
+            {
+                listViewUrls.EndUpdate();
+            }
+
+            BeginDownload();
+        }
+
+        private void buttonCancel_Click(object sender, EventArgs e)
+        {
+            ListView.SelectedListViewItemCollection selectedItems = listViewUrls.SelectedItems;
+
+            foreach (ListViewItem item in selectedItems)
+            {
+                var webClient = item.Tag as WebClientEx;
+
+                if (webClient == null)
                 {
                     continue;
                 }
 
-                if (!(client.IsBusy))
+                if (!webClient.IsBusy)
                 {
                     continue;
                 }
 
-                client.CancelAsync();
+                webClient.CancelAsync();
             }
         }
 
-        private void buttonRemove_Click(object sender, System.EventArgs e)
+        private void buttonRemove_Click(object sender, EventArgs e)
         {
             ListView.SelectedIndexCollection selectedIndices = listViewUrls.SelectedIndices;
             var selectedItems = new List<ListViewItem>(selectedIndices.Count);
 
             foreach (int index in selectedIndices)
             {
-                selectedItems.Add(listViewItems[index]);
+                selectedItems.Add(listViewUrls.Items[index]);
             }
 
-            listViewUrls.BeginUpdate();
-            listViewUrls.VirtualListSize -= selectedItems.Count;
+            bool abort = false;
 
             foreach (ListViewItem item in selectedItems)
             {
-                listViewItems.Remove(item);
+                var webClient = item.Tag as WebClientEx;
+
+                if (webClient == null)
+                {
+                    continue;
+                }
+
+                if (webClient.IsBusy)
+                {
+                    if (!abort && (ShowMessage("ダウンロード中です。中止しますか？", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes))
+                    {
+                        return;
+                    }
+
+                    abort = true;
+
+                    try
+                    {
+                        webClient.CancelAsync();
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                DisposeWebClient(item);
+            }
+
+            listViewUrls.BeginUpdate();
+
+            foreach (ListViewItem item in selectedItems)
+            {
+                listViewUrls.Items.Remove(item);
             }
 
             listViewUrls.EndUpdate();
@@ -232,23 +345,19 @@ namespace downloader
 
         private void formClosing(object sender, FormClosingEventArgs e)
         {
-            foreach (WebClientEx client in webClients)
+            foreach (ListViewItem item in listViewUrls.Items)
             {
-                DisposeWebClient(client);
+                try
+                {
+                    (item.Tag as WebClientEx).Dispose();
+                }
+                catch
+                {
+                }
             }
         }
 
         private void listViewUrls_DoubleClick(object sender, EventArgs e)
-        {
-            Explore();
-        }
-
-        private void listViewUrls_RetrieveVirtualItem(object sender, RetrieveVirtualItemEventArgs e)
-        {
-            e.Item = listViewItems[e.ItemIndex];
-        }
-
-        private void toolStripMenuItemShowFile_Click(object sender, EventArgs e)
         {
             Explore();
         }
@@ -264,11 +373,16 @@ namespace downloader
 
             try
             {
-                Clipboard.SetText(GetSubItem(listViewItems[indices[0]], columnHeaderUrl).Text);
+                Clipboard.SetText(GetSubItem(listViewUrls.Items[indices[0]], columnHeaderUrl).Text);
             }
             catch
             {
             }
+        }
+
+        private void toolStripMenuItemShowFile_Click(object sender, EventArgs e)
+        {
+            Explore();
         }
     }
 }
