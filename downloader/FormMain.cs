@@ -229,7 +229,7 @@ namespace downloader
                 return;
             }
 
-            if (folderBrowserDialog.ShowDialog() != DialogResult.OK)
+            if (selectDirectoryDialog.ShowDialog() != DialogResult.OK)
             {
                 return;
             }
@@ -253,7 +253,7 @@ namespace downloader
                     }
 
                     string[] segments = uri.Segments;
-                    AddItem(Path.Combine(folderBrowserDialog.SelectedPath, segments[segments.Length - 1]), item);
+                    AddItem(Path.Combine(selectDirectoryDialog.DirectoryName, segments[segments.Length - 1]), item);
                 }
             }
             finally

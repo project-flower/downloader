@@ -44,8 +44,8 @@ namespace downloader
             this.buttonRemove = new System.Windows.Forms.Button();
             this.buttonCancel = new System.Windows.Forms.Button();
             this.buttonShow = new System.Windows.Forms.Button();
-            this.folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
             this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
+            this.selectDirectoryDialog = new System.Windows.Forms.SelectDirectoryDialog();
             this.contextMenuStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -148,6 +148,10 @@ namespace downloader
             this.toolStripMenuItemCopyUrl.Text = "Copy URL(&U)";
             this.toolStripMenuItemCopyUrl.Click += new System.EventHandler(this.toolStripMenuItemCopyUrl_Click);
             // 
+            // selectDirectoryDialog
+            // 
+            this.selectDirectoryDialog.DirectoryName = null;
+            // 
             // buttonRemove
             // 
             this.buttonRemove.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
@@ -220,8 +224,8 @@ namespace downloader
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItemShowFile;
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItemCopyUrl;
-        private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog;
         private System.Windows.Forms.SaveFileDialog saveFileDialog;
+        private System.Windows.Forms.SelectDirectoryDialog selectDirectoryDialog;
     }
 }
 
